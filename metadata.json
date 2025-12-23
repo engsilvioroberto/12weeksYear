@@ -1,0 +1,7 @@
+{
+  "name": "1 Ano em 12 Semanas",
+  "description": "Sistema de gestão de execução baseado na metodologia de Brian Moran, focado em ciclos de 12 semanas para máxima produtividade.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
