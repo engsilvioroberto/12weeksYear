@@ -18,17 +18,28 @@ export const WeekView: React.FC<WeekViewProps> = ({ activeCycle, updateActiveCyc
 
   const isReadOnly = activeCycle.status === 'completed';
 
+  // Optimized: Use useCallback for stable function references in dependency arrays
   useEffect(() => {
-    let interval: any;
+    let interval: NodeJS.Timeout | null = null;
+    
     if (timerActive && timer > 0) {
-      interval = setInterval(() => setTimer(prev => prev - 1), 1000);
-    } else if (timer === 0) {
-      setTimerActive(false);
+      interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            setTimerActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
-    return () => clearInterval(interval);
-  }, [timerActive, timer]);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timerActive]);
 
-  const toggleTactic = (goalId: string, tacticId: string) => {
+  const toggleTactic = React.useCallback((goalId: string, tacticId: string) => {
     if (isReadOnly) return;
     const newGoals = activeCycle.goals.map(goal => {
       if (goal.id !== goalId) return goal;
@@ -47,7 +58,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ activeCycle, updateActiveCyc
       };
     });
     updateActiveCycle({ goals: newGoals });
-  };
+  }, [activeCycle.goals, viewingWeek, isReadOnly, updateActiveCycle]);
 
   const currentWeekTactics = useMemo(() => {
     const items: Array<{ goalId: string; goalTitle: string; tactic: Tactic }> = [];
