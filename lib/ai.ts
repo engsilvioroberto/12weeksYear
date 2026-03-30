@@ -65,23 +65,34 @@ export async function refineVision(visionText: string) {
   return response.text;
 }
 
-// Audio Utils
-export function encode(bytes: Uint8Array) {
+// Audio Utils - Optimized with TypedArray operations
+export function encode(bytes: Uint8Array): string {
+  // Use chunked processing to avoid call stack issues and improve performance
+  const chunkSize = 0x8000; // 32KB chunks
   let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
   }
+  
   return btoa(binary);
 }
 
-export function decode(base64: string) {
+export function decode(base64: string): Uint8Array {
   const binaryString = atob(base64);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  
+  // Process in chunks for better performance
+  const chunkSize = 0x8000;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunkEnd = Math.min(i + chunkSize, len);
+    for (let j = i; j < chunkEnd; j++) {
+      bytes[j] = binaryString.charCodeAt(j);
+    }
   }
+  
   return bytes;
 }
 
@@ -95,11 +106,14 @@ export async function decodeAudioData(
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
 
+  // Optimized: Process all channels with direct TypedArray access
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
+    // Use a single loop with direct indexing for better cache locality
     for (let i = 0; i < frameCount; i++) {
       channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
     }
   }
+  
   return buffer;
 }
