@@ -1,4 +1,10 @@
 
+export interface User {
+  name: string;
+  email: string;
+  photo: string;
+}
+
 export interface Vision {
   aspirational: string;
   threeYear: string;
@@ -30,9 +36,10 @@ export interface Cycle {
 }
 
 export interface AppState {
+  user: User | null;
   cycles: Cycle[];
   activeCycleId: string;
-  viewingCycleId: string; // The cycle currently being browsed in the UI
+  viewingCycleId: string;
   globalVision: Vision;
   seenEncartes: string[];
 }

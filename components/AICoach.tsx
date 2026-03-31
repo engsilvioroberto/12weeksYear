@@ -16,19 +16,11 @@ export const AICoach: React.FC<AICoachProps> = ({ onClose, context }) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const nextStartTimeRef = useRef(0);
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
-  // Optimized: Cache isMuted ref to avoid closure staleness in audio callback
-  const isMutedRef = useRef(isMuted);
-
-  // Keep ref in sync with state
-  useEffect(() => {
-    isMutedRef.current = isMuted;
-  }, [isMuted]);
 
   useEffect(() => {
     const initLive = async () => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        // Optimized: Reuse AudioContexts instead of recreating
         const inputAudioContext = new AudioContext({ sampleRate: 16000 });
         const outputAudioContext = new AudioContext({ sampleRate: 24000 });
         audioContextRef.current = outputAudioContext;
@@ -43,11 +35,9 @@ export const AICoach: React.FC<AICoachProps> = ({ onClose, context }) => {
               const source = inputAudioContext.createMediaStreamSource(stream);
               const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
               scriptProcessor.onaudioprocess = (e) => {
-                // Optimized: Use ref instead of closure to avoid stale state
-                if (isMutedRef.current) return;
+                if (isMuted) return;
                 const inputData = e.inputBuffer.getChannelData(0);
                 const int16 = new Int16Array(inputData.length);
-                // Optimized: Use set for bulk conversion
                 for (let i = 0; i < inputData.length; i++) {
                   int16[i] = inputData[i] * 32768;
                 }
@@ -76,10 +66,7 @@ export const AICoach: React.FC<AICoachProps> = ({ onClose, context }) => {
                 source.onended = () => sourcesRef.current.delete(source);
               }
               if (msg.serverContent?.interrupted) {
-                // Optimized: Stop and clear interrupted sources efficiently
-                sourcesRef.current.forEach(s => {
-                  try { s.stop(); } catch {}
-                });
+                sourcesRef.current.forEach(s => s.stop());
                 sourcesRef.current.clear();
                 nextStartTimeRef.current = 0;
               }

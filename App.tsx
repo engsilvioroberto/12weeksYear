@@ -1,101 +1,102 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
-import { View, AppState, Goal, Cycle } from './types';
+import { View, AppState, Goal, Cycle, User } from './types';
 import { VisionView } from './views/VisionView';
 import { PlanView } from './views/PlanView';
 import { WeekView } from './views/WeekView';
 import { ScorecardView } from './views/ScorecardView';
 import { ProfileView } from './views/ProfileView';
 import { CyclesView } from './views/CyclesView';
+import { LoginView } from './views/LoginView';
 
-const STORAGE_KEY = '1ano12semanas_v2';
-
-const MOCK_COMPLETED_CYCLE: Cycle = {
-  id: 'cycle-old-1',
-  name: 'Ciclo 01: Q1/2025 - Decolagem',
-  startDate: '2025-01-01',
-  endDate: '2025-03-26',
-  status: 'completed',
-  currentWeek: 12,
-  twelveWeekVision: 'Estabelecer as bases do meu negócio digital.',
-  finalScore: 82,
-  goals: [
-    {
-      id: 'old-g1',
-      title: 'Lançar Mentoria Beta',
-      tactics: [
-        { id: 'ot1', description: 'Definir currículo', weeks: [1, 2], completedWeeks: [1, 2] },
-        { id: 'ot2', description: 'Vender 5 vagas', weeks: [3, 4], completedWeeks: [3] }
-      ]
-    },
-    {
-      id: 'old-g2',
-      title: 'Rotina de Saúde 80%',
-      tactics: [
-        { id: 'ot3', description: 'Academia 3x', weeks: [1,2,3,4,5,6,7,8,9,10,11,12], completedWeeks: [1,2,3,5,6,7,8,10,11,12] }
-      ]
-    }
-  ]
-};
+const BASE_STORAGE_KEY = '12S_DATA_';
 
 const MOCK_ACTIVE_GOALS: Goal[] = [
   {
-    id: 'goal-1',
-    title: 'Lançar Novo Curso "Alta Performance 12S"',
+    id: 'goal-demo-1',
+    title: 'Minha Primeira Meta Estratégica',
     tactics: [
-      { id: 't-1-1', description: 'Gravar 3 módulos do curso por semana', weeks: [1, 2, 3, 4], completedWeeks: [1] },
-      { id: 't-1-2', description: 'Criar funil de vendas e landing page', weeks: [1, 2], completedWeeks: [1] },
-      { id: 't-1-3', description: 'Fazer 3 lives de aquecimento semanais', weeks: [3, 4, 5, 6], completedWeeks: [] }
-    ]
-  },
-  {
-    id: 'goal-2',
-    title: 'Dobrar Energia e Condicionamento Físico',
-    tactics: [
-      { id: 't-2-1', description: 'Treinar na academia 4x por semana', weeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], completedWeeks: [1] },
-      { id: 't-2-2', description: 'Beber 3 litros de água por dia', weeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], completedWeeks: [1] }
+      { id: 't-demo-1', description: 'Executar tática de exemplo semanal', weeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], completedWeeks: [] }
     ]
   }
 ];
 
-const INITIAL_STATE: AppState = {
+const getInitialState = (user: User | null): AppState => ({
+  user,
   globalVision: {
-    aspirational: 'Ser a maior referência em consultoria de produtividade do Brasil.',
-    threeYear: 'Faturamento anual de R$ 2M, equipe de 5 pessoas.'
+    aspirational: 'Minha grande visão de vida.',
+    threeYear: 'Onde estarei em 3 anos.'
   },
   cycles: [
     {
-      id: 'cycle-current',
-      name: 'Ciclo 02: Expansão',
+      id: 'cycle-initial',
+      name: 'Ciclo Inicial',
       startDate: new Date().toISOString().split('T')[0],
       endDate: '',
       status: 'active',
       currentWeek: 1,
-      twelveWeekVision: 'Validar o novo método de mentoria em grupo.',
+      twelveWeekVision: 'Minha visão para as próximas 12 semanas.',
       goals: MOCK_ACTIVE_GOALS
-    },
-    MOCK_COMPLETED_CYCLE
+    }
   ],
-  activeCycleId: 'cycle-current',
-  viewingCycleId: 'cycle-current',
+  activeCycleId: 'cycle-initial',
+  viewingCycleId: 'cycle-initial',
   seenEncartes: []
-};
+});
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.PLAN);
-  const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('12S_CURRENT_USER');
+    return savedUser ? JSON.parse(savedUser) : null;
   });
+  
+  const [state, setState] = useState<AppState | null>(null);
 
+  // Load user-specific data when user changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    if (user) {
+      const userKey = `${BASE_STORAGE_KEY}${user.email}`;
+      const savedData = localStorage.getItem(userKey);
+      if (savedData) {
+        setState(JSON.parse(savedData));
+      } else {
+        const newState = getInitialState(user);
+        setState(newState);
+        localStorage.setItem(userKey, JSON.stringify(newState));
+      }
+      localStorage.setItem('12S_CURRENT_USER', JSON.stringify(user));
+    } else {
+      setState(null);
+      localStorage.removeItem('12S_CURRENT_USER');
+    }
+  }, [user]);
 
-  const updateState = (newState: Partial<AppState>) => {
-    setState(prev => ({ ...prev, ...newState }));
+  // Persist state changes to user-specific key
+  useEffect(() => {
+    if (state && user) {
+      const userKey = `${BASE_STORAGE_KEY}${user.email}`;
+      localStorage.setItem(userKey, JSON.stringify(state));
+    }
+  }, [state, user]);
+
+  const updateState = useCallback((newState: Partial<AppState>) => {
+    setState(prev => prev ? { ...prev, ...newState } : null);
+  }, []);
+
+  const handleLogin = (newUser: User) => {
+    setUser(newUser);
   };
+
+  const handleLogout = () => {
+    setUser(null);
+    setCurrentView(View.PLAN);
+  };
+
+  if (!user || !state) {
+    return <LoginView onLogin={handleLogin} />;
+  }
 
   const activeCycle = state.cycles.find(c => c.id === state.activeCycleId) || state.cycles[0];
   const viewingCycle = state.cycles.find(c => c.id === state.viewingCycleId) || activeCycle;
@@ -115,7 +116,7 @@ const App: React.FC = () => {
       case View.PLAN: return <PlanView activeCycle={viewingCycle} updateActiveCycle={updateViewingCycle} seenEncartes={state.seenEncartes} updateGlobalState={updateState} />;
       case View.WEEK: return <WeekView activeCycle={viewingCycle} updateActiveCycle={updateViewingCycle} />;
       case View.SCORE: return <ScorecardView activeCycle={viewingCycle} seenEncartes={state.seenEncartes} updateGlobalState={updateState} />;
-      case View.PROFILE: return <ProfileView state={state} updateState={updateState} />;
+      case View.PROFILE: return <ProfileView state={state} updateState={updateState} onLogout={handleLogout} />;
       default: return <CyclesView state={state} updateState={updateState} />;
     }
   };
@@ -127,8 +128,9 @@ const App: React.FC = () => {
       activeCycleName={viewingCycle?.name}
       isViewingPastCycle={viewingCycle.id !== state.activeCycleId}
       onReturnToActive={() => updateState({ viewingCycleId: state.activeCycleId })}
+      user={user}
     >
-      <div key={`${currentView}-${state.viewingCycleId}`} className="view-transition">
+      <div key={`${currentView}-${state.viewingCycleId}-${user.email}`} className="view-transition">
         {renderView()}
       </div>
     </Layout>

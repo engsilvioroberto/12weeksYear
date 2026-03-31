@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppState } from '../types';
-import { Play, Pause, RotateCcw, ShieldCheck, Inbox, Zap } from 'lucide-react';
+import { Play, Pause, RotateCcw, ShieldCheck, Inbox, Zap, LogOut } from 'lucide-react';
 
 interface ProfileViewProps {
   state: AppState;
   updateState: (newState: Partial<AppState>) => void;
+  onLogout: () => void;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ state, updateState }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ state, updateState, onLogout }) => {
   const [activeBlock, setActiveBlock] = useState<'strategic' | 'buffer' | 'breakout' | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -35,15 +36,30 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ state, updateState }) 
   };
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-light tracking-tight">Performance</h1>
-        <p className="text-gray-500 text-sm">Gestão intencional do seu tempo.</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <header className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-light tracking-tight">Performance</h1>
+          <p className="text-gray-500 text-sm">Gestão intencional do seu tempo.</p>
+        </div>
+        {state.user && (
+          <div className="flex flex-col items-end">
+            <img src={state.user.photo} alt={state.user.name} className="w-12 h-12 rounded-full border-2 border-white shadow-sm mb-2" />
+            <span className="text-xs font-bold text-gray-900">{state.user.name}</span>
+            <button 
+              onClick={onLogout}
+              className="flex items-center space-x-1 text-[10px] font-bold text-red-400 uppercase tracking-widest hover:text-red-500 transition-colors mt-1"
+            >
+              <LogOut size={10} />
+              <span>Sair da conta</span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Timer Display */}
       {activeBlock && (
-        <section className="bg-gray-900 text-white p-8 rounded-2xl text-center space-y-4 animate-in zoom-in duration-300">
+        <section className="bg-gray-900 text-white p-8 rounded-2xl text-center space-y-4 animate-in zoom-in duration-300 shadow-2xl">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-500">
             {activeBlock === 'strategic' ? 'Bloco Estratégico Ativo' : 
              activeBlock === 'buffer' ? 'Bloco de Reserva Ativo' : 'Bloco de Fuga Ativo'}
@@ -68,58 +84,58 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ state, updateState }) 
         
         <button 
           onClick={() => startBlock('strategic', 180)}
-          className="w-full bg-white border border-gray-100 p-6 rounded-2xl flex items-center space-x-4 text-left hover:border-gray-200 transition-all shadow-sm"
+          className="w-full bg-white border border-gray-100 p-6 rounded-2xl flex items-center space-x-4 text-left hover:border-gray-200 transition-all shadow-sm group"
         >
-          <div className="p-3 bg-indigo-50 text-indigo-500 rounded-xl">
+          <div className="p-3 bg-indigo-50 text-indigo-500 rounded-xl group-hover:bg-indigo-100 transition-colors">
             <ShieldCheck size={24} />
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-gray-900">Bloco Estratégico</h4>
             <p className="text-xs text-gray-500">3h de foco profundo e sem interrupções.</p>
           </div>
-          <Play size={20} className="text-gray-300" />
+          <Play size={20} className="text-gray-300 group-hover:text-gray-900" />
         </button>
 
         <button 
           onClick={() => startBlock('buffer', 45)}
-          className="w-full bg-white border border-gray-100 p-6 rounded-2xl flex items-center space-x-4 text-left hover:border-gray-200 transition-all shadow-sm"
+          className="w-full bg-white border border-gray-100 p-6 rounded-2xl flex items-center space-x-4 text-left hover:border-gray-200 transition-all shadow-sm group"
         >
-          <div className="p-3 bg-amber-50 text-amber-500 rounded-xl">
+          <div className="p-3 bg-amber-50 text-amber-500 rounded-xl group-hover:bg-amber-100 transition-colors">
             <Inbox size={24} />
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-gray-900">Bloco de Reserva</h4>
             <p className="text-xs text-gray-500">30-60min para e-mails e tarefas adm.</p>
           </div>
-          <Play size={20} className="text-gray-300" />
+          <Play size={20} className="text-gray-300 group-hover:text-gray-900" />
         </button>
 
         <button 
           onClick={() => startBlock('breakout', 180)}
-          className="w-full bg-white border border-gray-100 p-6 rounded-2xl flex items-center space-x-4 text-left hover:border-gray-200 transition-all shadow-sm"
+          className="w-full bg-white border border-gray-100 p-6 rounded-2xl flex items-center space-x-4 text-left hover:border-gray-200 transition-all shadow-sm group"
         >
-          <div className="p-3 bg-emerald-50 text-emerald-500 rounded-xl">
+          <div className="p-3 bg-emerald-50 text-emerald-500 rounded-xl group-hover:bg-emerald-100 transition-colors">
             <Zap size={24} />
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-gray-900">Bloco de Fuga</h4>
             <p className="text-xs text-gray-500">3h livres para recarregar as energias.</p>
           </div>
-          <Play size={20} className="text-gray-300" />
+          <Play size={20} className="text-gray-300 group-hover:text-gray-900" />
         </button>
       </div>
 
       <div className="pt-10 border-t border-gray-100">
         <button 
           onClick={() => {
-            if(confirm('Deseja resetar todos os dados do ciclo?')) {
+            if(confirm('Deseja resetar todos os dados da sua conta local?')) {
               localStorage.clear();
               window.location.reload();
             }
           }}
           className="w-full py-4 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors"
         >
-          Resetar Ciclo de 12 Semanas
+          Resetar Todos os Dados
         </button>
       </div>
     </div>

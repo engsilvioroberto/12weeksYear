@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View } from '../types';
+import { View, User } from '../types';
 import { 
   Target, 
   LayoutList, 
@@ -19,6 +19,7 @@ interface LayoutProps {
   activeCycleName?: string;
   isViewingPastCycle?: boolean;
   onReturnToActive?: () => void;
+  user?: User | null;
 }
 
 const NavItem: React.FC<{ 
@@ -45,7 +46,7 @@ const NavItem: React.FC<{
   </button>
 );
 
-export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, activeCycleName, isViewingPastCycle, onReturnToActive }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, activeCycleName, isViewingPastCycle, onReturnToActive, user }) => {
   const menuItems = [
     { id: View.CYCLES, label: 'Ciclos', icon: <Layers size={20} /> },
     { id: View.VISION, label: 'Visão', icon: <Target size={20} /> },
@@ -79,7 +80,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           ))}
         </nav>
 
-        <div className="mt-auto space-y-3">
+        <div className="mt-auto space-y-4">
           {isViewingPastCycle && onReturnToActive && (
             <button 
               onClick={onReturnToActive}
@@ -99,6 +100,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
               )}
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1 relative z-10">{isViewingPastCycle ? 'Visualizando' : 'Ativo agora'}</p>
               <p className={`text-sm font-semibold truncate relative z-10 ${isViewingPastCycle ? 'text-gray-600' : 'text-white'}`}>{activeCycleName}</p>
+            </div>
+          )}
+
+          {user && (
+            <div className="flex items-center space-x-3 px-2 py-1">
+              <img src={user.photo} alt={user.name} className="w-8 h-8 rounded-full border border-gray-200" />
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-gray-900 truncate">{user.name}</p>
+                <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+              </div>
             </div>
           )}
         </div>
